@@ -705,6 +705,9 @@ export default function App() {
                 </Svg>
               </View>
               
+              {/* Espace entre le rond et la zone de texte */}
+              <View style={{ height: 40 }} />
+              
               {/* Champ de saisie pour le message */}
               <View style={styles.inputContainer}>
                 <TextInput
@@ -718,6 +721,9 @@ export default function App() {
                   blurOnSubmit={true}
                 />
               </View>
+              
+              {/* Espace supplémentaire augmenté */}
+              <View style={{ height: 120 }} />
               
               {/* Texte associé à l'audio */}
               <View style={styles.textContainer}>
@@ -787,13 +793,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   textContainer: {
-    marginTop: 30,
-    marginBottom: 30,
+    marginTop: 0,
+    marginBottom: 15,
     width: '100%',
-    padding: 15,
+    padding: 10,
     borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    minHeight: 100,
+    minHeight: 60,
     justifyContent: 'center',
   },
   responseText: {
@@ -811,9 +817,10 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 30,
     borderRadius: 25,
-    marginTop: 20,
+    marginTop: 30,
     width: 200,
     alignItems: 'center',
+    marginBottom: 20,
   },
   buttonDisabled: {
     backgroundColor: '#555555',
