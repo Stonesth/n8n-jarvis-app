@@ -59,12 +59,15 @@ export default function App() {
   const radius = useSharedValue(50);
   const opacity = useSharedValue(0.7);
   const pulsatingRadius = useSharedValue(50);
+  const jarvisOpacity = useSharedValue(1); // Pour contrôler l'opacité du texte JARVIS
   
-  // Valeurs d'animation supplémentaires pour les ondulations
+  // Variables d'animation pour les vagues
   const wave1 = useSharedValue(0);
   const wave2 = useSharedValue(0);
   const wave3 = useSharedValue(0);
-  const jarvisOpacity = useSharedValue(1); // Pour contrôler l'opacité du texte JARVIS
+  
+  // Variables pour l'égaliseur audio - 8 triangles autour du cercle
+  const audioTriangles = new Array(8).fill(0).map(() => useSharedValue(8 + Math.random() * 10));
   
   // Props animés pour le cercle principal
   const circleProps = useAnimatedProps(() => {
@@ -288,10 +291,13 @@ export default function App() {
                 wave2.value = 0;
                 wave3.value = 0;
                 
-                // Animations d'ondulation sur plusieurs fréquences pendant la lecture
+                // Animation pendant la lecture audio
+                jarvisOpacity.value = withTiming(0, { duration: 500 }); // Masquer JARVIS
+                
+                // Accélérer les animations d'ondes
                 wave1.value = withRepeat(
                   withTiming(Math.PI * 20, { duration: 10000 }),
-                  -1, // répétition infinie
+                  -1,
                   false
                 );
                 
@@ -306,6 +312,23 @@ export default function App() {
                   -1,
                   false
                 );
+                
+                // Animation des triangles de l'égaliseur audio
+                audioTriangles.forEach((triangle, index) => {
+                  // Chaque triangle a sa propre hauteur qui varie avec le temps
+                  // Pour simuler un égaliseur audio réactif
+                  const randomHeight = 30 + Math.random() * 45; // Hauteur beaucoup plus grande (entre 30 et 75)
+                  const randomSpeed = 120 + Math.random() * 180; // Vitesse plus rapide (entre 120ms et 300ms)
+                  
+                  triangle.value = withRepeat(
+                    withSequence(
+                      withTiming(randomHeight, { duration: randomSpeed }),
+                      withTiming(10 + Math.random() * 15, { duration: randomSpeed })
+                    ),
+                    -1,
+                    false
+                  );
+                });
                 
                 await newSound.playAsync();
                 setIsPlaying(true);
@@ -501,11 +524,38 @@ export default function App() {
                       <Circle cx="15" cy="12.5" r="1" fill="rgba(0, 229, 255, 0.3)" />
                       <Path
                         d="M15,5 L25,10 L25,15 L15,20 L5,15 L5,10 Z"
-                        fill="none"
                         stroke="rgba(0, 229, 255, 0.15)"
                         strokeWidth="0.3"
                       />
                     </Pattern>
+                    
+                    {/* Gradient jaune électrique intense pour les triangles de l'égaliseur */}
+                     <LinearGradient
+                       id="yellowElectricGradient"
+                       x1="0%"
+                       y1="0%"
+                       x2="0%"
+                       y2="100%"
+                     >
+                       <Stop offset="0%" stopColor="#FFFF00" stopOpacity="1" />
+                       <Stop offset="40%" stopColor="#FFE000" stopOpacity="0.95" />
+                       <Stop offset="70%" stopColor="#FFCC00" stopOpacity="0.9" />
+                       <Stop offset="100%" stopColor="#FF9500" stopOpacity="0.8" />
+                     </LinearGradient>
+                     
+                     {/* Radial pour effet de halo lumineux jaune */}
+                     <RadialGradient
+                       id="yellowGlow"
+                       cx="50%"
+                       cy="50%"
+                       r="50%"
+                       fx="50%"
+                       fy="50%"
+                     >
+                       <Stop offset="0%" stopColor="#FFFF00" stopOpacity="0.9" />
+                       <Stop offset="70%" stopColor="#FFCC00" stopOpacity="0.4" />
+                       <Stop offset="100%" stopColor="#FF9500" stopOpacity="0" />
+                     </RadialGradient>
                     
                     {/* Les filtres SVG ne sont pas bien supportés, on les a retirés */}
                     
@@ -585,6 +635,68 @@ export default function App() {
                       strokeOpacity: 0.2 + Math.abs(Math.cos(wave1.value)) * 0.1,
                     }))}
                   />
+                  
+                  {/* Égaliseur audio: triangles jaunes électriques qui réagissent au son */}
+                  {[0, 1, 2, 3, 4, 5, 6, 7].map((index) => {
+                    // Calcul de la position du triangle autour du cercle - équidistants sur 360 degrés
+                    const angleRad = (index * Math.PI / 4); // 8 triangles équidistants (2π/8 = π/4)
+                    
+                    // Centre identique aux cercles principaux
+                    const centerX = 150;
+                    const centerY = 150;
+                    const radius = 80; // Position ajustée à environ 0,2 cm du centre
+                    
+                    // La base du triangle doit être exactement sur le cercle extérieur
+                    // Utiliser un angle plus large pour que les triangles soient plus visibles
+                    const arcWidth = 0.09; // Largeur de l'arc ajustée pour une base plus fine
+                    // Points de base exactement sur le cercle
+                    const baseX1 = centerX + radius * Math.cos(angleRad - arcWidth);
+                    const baseY1 = centerY + radius * Math.sin(angleRad - arcWidth);
+                    const baseX2 = centerX + radius * Math.cos(angleRad + arcWidth);
+                    const baseY2 = centerY + radius * Math.sin(angleRad + arcWidth);
+                    
+                    return (
+                      <AnimatedPath
+                        key={`triangle-${index}`}
+                        fill="url(#yellowElectricGradient)"
+                        stroke="#FFFF80"
+                        strokeWidth="1.5"
+                        filter="drop-shadow(0 0 2px #FFFF00)"
+                        animatedProps={useAnimatedProps(() => {
+                          // Utiliser la valeur d'animation pour ce triangle spécifique
+                          // Avec une amplitude encore plus grande pour atteindre le bord du cercle extérieur depuis le centre
+                          const height = audioTriangles[index].value * 2.0; // Amplitude fortement augmentée pour s'étendre du cercle central au cercle extérieur
+                          
+                          // Calculer la position de la pointe pour qu'elle s'étende vers l'extérieur
+                          // La pointe peut dépasser jusqu'au cercle extérieur (140px)
+                          // On limite l'extension à 140px maximum pour ne pas déborder du cercle
+                          const extensionMax = 140;
+                          const tipDistance = Math.min(radius + height, extensionMax);
+                          const tipX = centerX + tipDistance * Math.cos(angleRad);
+                          const tipY = centerY + tipDistance * Math.sin(angleRad);
+                          
+                          // Effet zigzag léger pour un aspect électrique
+                          const jitterAmount = 1.5; // Amplitude raisonnable du zigzag
+                          
+                          // Petites variations pour effet électrique
+                          const jitterX1 = baseX1 + (Math.sin(wave2.value + index) * jitterAmount);
+                          const jitterY1 = baseY1 + (Math.cos(wave3.value + index) * jitterAmount);
+                          const jitterX2 = baseX2 + (Math.sin(wave1.value + index) * jitterAmount);
+                          const jitterY2 = baseY2 + (Math.cos(wave2.value + index) * jitterAmount);
+                          
+                          // Intensité lumineuse variable pour effet électrique
+                          const glowIntensity = 0.7 + Math.abs(Math.sin(wave1.value + index * 0.5)) * 0.3;
+                          
+                          // Chemin du triangle avec pointe extérieure
+                          return {
+                            d: `M ${jitterX1} ${jitterY1} L ${jitterX2} ${jitterY2} L ${tipX} ${tipY} Z`,
+                            strokeWidth: 1.5 + Math.abs(Math.sin(wave3.value + index * 0.3)) * 0.5,
+                            opacity: isPlaying ? glowIntensity : 0
+                          };
+                        })}
+                      />
+                    );
+                  })}
                   
                   {/* Cercle central principal */}
                   <AnimatedCircle
